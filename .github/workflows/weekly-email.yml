@@ -7,6 +7,9 @@ on:
       dry_run:
         description: "Preview only (1) or really send (0)"
         default: "1"
+      to:
+        description: "Recipient (blank = tangoannouncements list)"
+        default: ""
 permissions:
   contents: write
 jobs:
@@ -30,6 +33,7 @@ jobs:
           SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
           MODE: per_event
+          TO_ADDR: ${{ github.event.inputs.to || 'tangoannouncements@lists.purdue.edu' }}
         run: python scripts/send_weekly.py
       - uses: actions/upload-artifact@v4
         with: { name: email-previews, path: out/ }
