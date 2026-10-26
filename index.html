@@ -43,6 +43,10 @@ h2{font-weight:400;font-size:34px;margin:0 0 6px}
 .sign code{display:inline-block;margin-top:6px;color:var(--gold);font-size:18px}
 footer{padding:36px 0;text-align:center;color:var(--mute);font:13px system-ui,sans-serif;border-top:1px solid var(--line)}
 .empty{color:var(--mute);font-style:italic}
+#today{background:radial-gradient(ellipse at 50% 0,rgba(140,36,56,.22),transparent 70%)}
+#today .ev{border-left:3px solid var(--wine)}
+.ev .date b.now{font-size:24px;letter-spacing:.04em}
+.ev.done{opacity:.55}
 @media(max-width:560px){.ev{grid-template-columns:1fr}.date{border:0;text-align:left;padding:0;display:flex;gap:10px;align-items:baseline}}
 </style>
 </head>
@@ -52,6 +56,11 @@ footer{padding:36px 0;text-align:center;color:var(--mute);font:13px system-ui,sa
 <h1><em>La Milonguera</em><br>Argentine Tango Club</h1>
 <a class="btn" href="#events">Upcoming events</a>
 </div></header>
+
+<section id="today" hidden><div class="wrap">
+<h2>Today</h2><p class="sub" id="today-date">&nbsp;</p>
+<div class="events" id="today-list"></div>
+</div></section>
 
 <section id="events"><div class="wrap">
 <h2>Upcoming events</h2><p class="sub">&nbsp;</p>
@@ -78,15 +87,28 @@ const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const safeUrl=u=>/^https?:\/\//.test(u||'')?u:'#';
 (function(list){
   const now=new Date();
-  const up=list.filter(e=>new Date(e.end||e.start)>=now).sort((a,b)=>a.start.localeCompare(b.start));
-  const box=document.getElementById('events-list');
-  if(!up.length){box.innerHTML='<p class="empty">No upcoming events right now. Check back soon.</p>';return;}
-  box.innerHTML=up.map(e=>{
+  const sameDay=d=>d.toDateString()===now.toDateString();
+  const sorted=list.slice().sort((a,b)=>a.start.localeCompare(b.start));
+  const today=sorted.filter(e=>sameDay(new Date(e.start)));
+  const up=sorted.filter(e=>!sameDay(new Date(e.start))&&new Date(e.end||e.start)>=now);
+  const card=(e,isToday)=>{
     const d=new Date(e.start);
     const t=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    return `<article class="ev"><div class="date"><b>${d.getDate()}</b><span>${d.toLocaleString('en-US',{month:'short'})}</span></div>
+    // Recurring BoilerLink classes end at term end, so compare today's date with the end's clock time.
+    const done=isToday&&new Date(e.start.slice(0,10)+(e.end||e.start).slice(10))<now;
+    const date=isToday?`<b class="now">Today</b><span>${done?'Ended':t}</span>`
+      :`<b>${d.getDate()}</b><span>${d.toLocaleString('en-US',{month:'short'})}</span>`;
+    return `<article class="ev${done?' done':''}"><div class="date">${date}</div>
     <div><h3>${esc(e.title)}</h3><div class="meta">${d.toLocaleDateString('en-US',{weekday:'long'})} · ${t} · ${esc(e.location)}</div>
-    <p>${esc(e.description)}</p><p><a class="more" href="${esc(safeUrl(e.url))}">Details &amp; RSVP →</a></p></div></article>`}).join('');
+    <p>${esc(e.description)}</p><p><a class="more" href="${esc(safeUrl(e.url))}">Details &amp; RSVP →</a></p></div></article>`};
+  if(today.length){
+    document.getElementById('today').hidden=false;
+    document.getElementById('today-date').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    document.getElementById('today-list').innerHTML=today.map(e=>card(e,true)).join('');
+  }
+  const box=document.getElementById('events-list');
+  if(!up.length){box.innerHTML='<p class="empty">No upcoming events right now. Check back soon.</p>';return;}
+  box.innerHTML=up.map(e=>card(e,false)).join('');
 })(window.EVENTS||[]);
 (function(p){
   document.getElementById('gallery-grid').innerHTML=p.map(x=>`<figure><img loading="lazy" src="${esc(x.src)}" alt="${esc(x.alt)}"><figcaption>${esc(x.caption)}</figcaption></figure>`).join('');
