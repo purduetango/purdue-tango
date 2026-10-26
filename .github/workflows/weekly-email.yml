@@ -1,7 +1,7 @@
-name: Weekly tango email
+name: Tango email
 on:
   schedule:
-    - cron: "0 13 * * 1"   # Mondays 13:00 UTC = 9:00 AM EDT (8:00 AM EST after Nov 1)
+    - cron: "0 13 * * *"   # Daily 13:00 UTC = 9:00 AM EDT (8:00 AM EST after Nov 1); sends only on event days
   workflow_dispatch:
     inputs:
       dry_run:

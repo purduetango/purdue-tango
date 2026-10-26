@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""Generate (and optionally send) weekly announcement emails. Standard library only.
+"""Generate (and optionally send) tango announcement emails. Standard library only.
+
+Wording comes from data/email.json (greeting, signature, one template per class type).
 
 Env:
-  MODE            per_event (default: one email per event in the next 7 days) | digest
+  MODE            per_event (default: on the day of each event, one email per event) | digest
+                  (one email for the next DAYS days; only sends on Mondays unless FORCE=1)
   DRY_RUN         "1" (default) writes previews to out/ and sends nothing; "0" sends
   GMAIL_USER, GMAIL_APP_PASSWORD   Gmail address + 16-char app password
   TO_ADDR         default tangoannouncements@lists.purdue.edu
   SITE_URL        public URL of the site
-  DAYS            look-ahead window, default 7
+  DAYS            digest look-ahead window, default 7
+  TODAY           pretend today is this date (YYYY-MM-DD), for previews
   ALLOW_SAMPLE    "1" to include entries flagged "sample": true
 """
-import html, json, os, smtplib, ssl, sys
-from datetime import datetime, timedelta
+import html, json, os, re, smtplib, ssl
+from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 from zoneinfo import ZoneInfo
@@ -23,73 +27,93 @@ SITE = os.environ.get("SITE_URL", "https://YOUR-USER.github.io/purdue-tango/")
 MODE = os.environ.get("MODE", "per_event")
 DRY = os.environ.get("DRY_RUN", "1") != "0"
 DAYS = int(os.environ.get("DAYS", "7"))
+TODAY = date.fromisoformat(os.environ["TODAY"]) if os.environ.get("TODAY") else datetime.now(TZ).date()
+CFG = json.load(open(os.path.join(ROOT, "data", "email.json")))
 h = html.escape
 
 def load():
     raw = open(os.path.join(ROOT, "data", "events.js")).read()
     ev = json.loads(raw[raw.rindex("window.EVENTS =") + 15:].rsplit(";", 1)[0])
-    now = datetime.now(TZ).replace(tzinfo=None)
-    end = now + timedelta(days=DAYS)
-    keep = []
-    for e in ev:
-        if e.get("sample") and os.environ.get("ALLOW_SAMPLE") != "1":
-            continue
-        s = datetime.fromisoformat(e["start"])
-        if now <= s <= end:
-            keep.append(e)
+    last = TODAY + timedelta(days=DAYS - 1 if MODE == "digest" else 0)
+    keep = [e for e in ev if TODAY <= datetime.fromisoformat(e["start"]).date() <= last
+            and (not e.get("sample") or os.environ.get("ALLOW_SAMPLE") == "1")]
     return sorted(keep, key=lambda e: e["start"])
 
-def when(e):
+def span(e):
+    """7.00-8.30pm, or 11.00am-1.00pm when the halves differ."""
     s, f = datetime.fromisoformat(e["start"]), datetime.fromisoformat(e.get("end") or e["start"])
-    return f"{s:%A, %B} {s.day} · {s:%-I:%M %p} – {f:%-I:%M %p}"
+    t = lambda d: f"{d:%-I}.{d:%M}"
+    ap = lambda d: f"{d:%p}".lower()
+    return f"{t(s)}-{t(f)}{ap(f)}" if ap(s) == ap(f) else f"{t(s)}{ap(s)}-{t(f)}{ap(f)}"
 
-def block(e):
+def template(e):
+    title = e["title"].lower()
+    return next((c for c in CFG["classes"] if c["match"].lower() in title), CFG["fallback"])
+
+def fill(s, e):
+    return s.format(time=span(e), location=e.get("location") or "TBA", title=e["title"],
+                    description=e.get("description", "")).strip()
+
+def para(s):
+    # Escape, then turn bare links into clickable ones.
+    return re.sub(r"(https?://\S+)", r'<a href="\1" style="color:#7a1f2e">\1</a>', h(s))
+
+def card(e, kicker):
     img = e.get("image", "")
-    if img.startswith("http"):
-        pic = f'<img src="{h(img)}" alt="" width="520" style="display:block;width:100%;height:auto;border:0">'
-    else:
-        pic = ""
-    return f'''<tr><td style="padding:0 0 28px">{pic}
-<div style="font:11px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#a8842f;padding-top:16px">{h(when(e))}</div>
-<div style="font:26px Georgia,serif;color:#2a1a1d;padding:6px 0">{h(e["title"])}</div>
-<div style="font:14px Arial,sans-serif;color:#7a6a6c">{h(e["location"])}</div>
-<div style="font:15px/1.6 Georgia,serif;color:#4a3b3d;padding-top:10px">{h(e.get("description",""))}</div>
-<div style="padding-top:14px"><a href="{h(e["url"])}" style="font:11px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#7a1f2e;text-decoration:none;border-bottom:1px solid #7a1f2e">Details &amp; RSVP</a></div></td></tr>'''
+    pic = f'<img src="{h(img)}" alt="" width="498" style="display:block;width:100%;height:auto;border:0">' if img.startswith("http") else ""
+    return f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e6dccf;border-left:3px solid #7a1f2e;margin:6px 0 22px"><tr><td>{pic}
+<div style="padding:16px 20px 18px"><div style="font:11px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#a8842f">{h(kicker)}</div>
+<div style="font:22px Georgia,serif;color:#2a1a1d;padding:6px 0 2px">{h(e["title"])}</div>
+<div style="font:14px Arial,sans-serif;color:#7a6a6c">{h(e.get("location") or "TBA")}</div>
+<div style="padding-top:12px"><a href="{h(e["url"])}" style="font:11px Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;color:#7a1f2e;text-decoration:none;border-bottom:1px solid #7a1f2e">Details &amp; RSVP</a></div></div></td></tr></table>'''
 
-def wrap(title, events):
-    body = "".join(block(e) for e in events)
+def letter(paragraphs, cards):
+    p = lambda s: f'<p style="margin:0 0 16px;font:16px/1.6 Georgia,serif;color:#2a1a1d">{s}</p>'
+    body = (p(h(CFG["greeting"])) + "".join(p(para(x)) for x in paragraphs) + cards
+            + p("<br>".join(h(x) for x in CFG["signature"])))
     return f'''<!doctype html><html><body style="margin:0;background:#f3ece4"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffdfa">
-<tr><td style="background:#1a1214;padding:30px;text-align:center"><div style="font:11px Arial,sans-serif;letter-spacing:5px;color:#c9a45c">PURDUE TANGO CLUB</div><div style="font:30px Georgia,serif;color:#f4ece6;padding-top:8px">{h(title)}</div></td></tr>
-<tr><td style="padding:30px"><table role="presentation" width="100%">{body}</table></td></tr>
+<tr><td style="background:#1a1214;padding:16px 30px;font:11px Arial,sans-serif;letter-spacing:5px;color:#c9a45c;text-align:center">PURDUE LA MILONGUERA TANGO CLUB</td></tr>
+<tr><td style="padding:30px">{body}</td></tr>
 <tr><td style="padding:20px 30px;background:#f3ece4;font:12px Arial,sans-serif;color:#7a6a6c;text-align:center">See every event and photo at <a href="{h(SITE)}" style="color:#7a1f2e">{h(SITE)}</a></td></tr>
 </table></td></tr></table></body></html>'''
 
-def text(events):
-    parts = [f"{e['title']}\n{when(e)}\n{e['location']}\n{e.get('description','')}\n{e['url']}\n" for e in events]
-    return "\n".join(parts) + f"\nAll events & photos: {SITE}\n"
+def text(paragraphs, events):
+    links = "".join(f"{e['title']} ({span(e)}, {e.get('location') or 'TBA'}): {e['url']}\n" for e in events)
+    return "\n\n".join([CFG["greeting"], *paragraphs, links.strip(), "\n".join(CFG["signature"])]) + f"\n\nAll events & photos: {SITE}\n"
 
 def messages(events):
+    """(subject, html, text) per email."""
     if MODE == "digest":
-        d = datetime.fromisoformat(events[0]["start"])
-        return [(f"Tango this week: {len(events)} event{'s' if len(events)>1 else ''}", "This week in tango", events)]
-    return [(f"Tango: {e['title']} – {datetime.fromisoformat(e['start']):%a %b} {datetime.fromisoformat(e['start']).day}", e["title"], [e]) for e in events]
+        intro = ["Here is what we have coming up this week:"]
+        kick = lambda e: f"{datetime.fromisoformat(e['start']):%A, %b} {datetime.fromisoformat(e['start']).day} · {span(e)}"
+        cards = "".join(card(e, kick(e)) for e in events)
+        return [(f"Tango this week: {len(events)} event{'s' if len(events) > 1 else ''}", letter(intro, cards), text(intro, events))]
+    out = []
+    for e in events:
+        t = template(e)
+        paras = [fill(x, e) for x in t["paragraphs"]]
+        subj = f"{fill(t['subject'], e)} · {span(e)} · {e.get('location') or 'TBA'}"
+        out.append((subj, letter(paras, card(e, f"Today · {span(e)}")), text(paras, [e])))
+    return out
 
 def main():
+    if MODE == "digest" and TODAY.weekday() != 0 and os.environ.get("FORCE") != "1":
+        print("Digest mode only sends on Mondays."); return
     events = load()
     if not events:
-        print("No events in the next window; nothing to send."); return
+        print("No events in the window; nothing to send."); return
     os.makedirs(os.path.join(ROOT, "out"), exist_ok=True)
+    user = os.environ.get("GMAIL_USER", "club@example.com")
     msgs = []
-    for i, (subj, title, evs) in enumerate(messages(events), 1):
+    for i, (subj, body, plain) in enumerate(messages(events), 1):
         m = EmailMessage()
         m["Subject"], m["To"] = subj, TO
-        user = os.environ.get("GMAIL_USER", "club@example.com")
-        m["From"] = formataddr(("Purdue Tango Club", user))
+        m["From"] = formataddr(("Purdue La Milonguera Tango Club", user))
         m["Message-ID"] = make_msgid()
-        m.set_content(text(evs))
-        m.add_alternative(wrap(title, evs), subtype="html")
-        open(os.path.join(ROOT, "out", f"email-{i}.html"), "w").write(wrap(title, evs))
+        m.set_content(plain)
+        m.add_alternative(body, subtype="html")
+        open(os.path.join(ROOT, "out", f"email-{i}.html"), "w").write(body)
         msgs.append(m)
     print(f"Generated {len(msgs)} email(s) in out/.")
     if DRY:
