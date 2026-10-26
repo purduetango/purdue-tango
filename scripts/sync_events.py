@@ -9,7 +9,7 @@ If FEED_URL is unset, nothing happens and events.js is edited by hand.
 """
 import html, json, os, re, sys, urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("America/Indiana/Indianapolis")
@@ -70,6 +70,31 @@ def from_ics(text):
                     "description": un(g("DESCRIPTION"))[:400], "url": g("URL") or BASE + "/events?query=tango", "image": ""})
     return out
 
+def expand(events):
+    """BoilerLink lists some weekly classes as one entry spanning the term (Mon 7 PM -> Mon Dec 7 8:30 PM)
+    with no recurrence rule. When start and end share a weekday, treat it as weekly sessions from the
+    start's clock time to the end's; otherwise (e.g. a Fri-Sun festival) keep it as one multi-day event."""
+    out = []
+    for e in events:
+        s, f = datetime.fromisoformat(e["start"]), datetime.fromisoformat(e["end"])
+        if s.date() == f.date() or s.weekday() != f.weekday() or f.time() <= s.time():
+            out.append(e); continue
+        d = s
+        while d.date() <= f.date():
+            out.append({**e, "id": f"{e['id']}-{d:%Y%m%d}", "series": e["id"],
+                        "start": d.strftime("%Y-%m-%dT%H:%M"),
+                        "end": datetime.combine(d.date(), f.time()).strftime("%Y-%m-%dT%H:%M")})
+            d += timedelta(days=7)
+    return out
+
+def dedupe(events):
+    """One entry per (title, start). One-off entries beat expanded series sessions, since they carry
+    per-session changes such as a different room."""
+    best = {}
+    for e in sorted(events, key=lambda e: "series" in e):
+        best.setdefault((" ".join(e["title"].lower().split()), e["start"]), e)
+    return list(best.values())
+
 def main():
     url = os.environ.get("FEED_URL", "").strip()
     if not url:
@@ -85,9 +110,10 @@ def main():
     host = os.environ.get("HOST_FILTER", "La Milonguera").lower()
     q = os.environ.get("FILTER", "").lower()
     now = datetime.now(TZ).strftime("%Y-%m-%dT%H:%M")
-    events = [e for e in events if e["end"] >= now
-              and (not host or any(host in h.lower() for h in e.get("hosts", [])) )
+    events = [e for e in events
+              if (not host or any(host in h.lower() for h in e.get("hosts", [])) )
               and q in (e["title"] + e["description"]).lower()]
+    events = [e for e in dedupe(expand(events)) if e["end"] >= now]
     if not events:
         print("Feed returned no matching events; keeping existing file."); return
     for e in events: e.pop("hosts", None)

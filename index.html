@@ -87,15 +87,16 @@ const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const safeUrl=u=>/^https?:\/\//.test(u||'')?u:'#';
 (function(list){
   const now=new Date();
-  const sameDay=d=>d.toDateString()===now.toDateString();
+  const dayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()), dayEnd=new Date(+dayStart+864e5);
+  const ends=e=>new Date(e.end||e.start);
   const sorted=list.slice().sort((a,b)=>a.start.localeCompare(b.start));
-  const today=sorted.filter(e=>sameDay(new Date(e.start)));
-  const up=sorted.filter(e=>!sameDay(new Date(e.start))&&new Date(e.end||e.start)>=now);
+  const happensToday=e=>new Date(e.start)<dayEnd&&ends(e)>=dayStart;
+  const today=sorted.filter(happensToday);
+  const up=sorted.filter(e=>!happensToday(e)&&ends(e)>=now);
   const card=(e,isToday)=>{
     const d=new Date(e.start);
     const t=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    // Recurring BoilerLink classes end at term end, so compare today's date with the end's clock time.
-    const done=isToday&&new Date(e.start.slice(0,10)+(e.end||e.start).slice(10))<now;
+    const done=isToday&&ends(e)<now;
     const date=isToday?`<b class="now">Today</b><span>${done?'Ended':t}</span>`
       :`<b>${d.getDate()}</b><span>${d.toLocaleString('en-US',{month:'short'})}</span>`;
     return `<article class="ev${done?' done':''}"><div class="date">${date}</div>
