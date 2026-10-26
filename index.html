@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Purdue Tango Club</title>
+<meta name="description" content="Purdue Tango Club">
+<style>
+:root{--bg:#0f0b0c;--card:#181214;--ink:#f4ece6;--mute:#b3a49b;--gold:#c9a45c;--wine:#8c2438;--line:#2b2124}
+@media (prefers-color-scheme:light){:root{--bg:#faf6f1;--card:#fff;--ink:#241a1c;--mute:#6f6063;--gold:#9a7424;--wine:#7a1f2e;--line:#e6dccf}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 Georgia,"Times New Roman",serif}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0;font:13px/1 system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+nav a{text-decoration:none;margin-left:22px;color:var(--mute)}nav a:hover{color:var(--gold)}
+.brand{color:var(--gold);font-family:Georgia,serif;font-size:15px;letter-spacing:.3em}
+header.hero{text-align:center;padding:90px 0 80px;background:radial-gradient(ellipse at 50% 0,rgba(140,36,56,.35),transparent 65%)}
+.hero small{font:12px system-ui,sans-serif;letter-spacing:.4em;text-transform:uppercase;color:var(--gold)}
+.hero h1{font-weight:400;font-size:clamp(40px,8vw,84px);line-height:1.05;margin:18px 0}
+.hero h1 em{color:var(--gold)}
+.hero p{max-width:540px;margin:0 auto 32px;color:var(--mute)}
+.btn{display:inline-block;padding:13px 28px;border:1px solid var(--gold);color:var(--gold);text-decoration:none;font:12px system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;transition:.2s}
+.btn:hover{background:var(--gold);color:#1a1214}
+section{padding:70px 0;border-top:1px solid var(--line)}
+h2{font-weight:400;font-size:34px;margin:0 0 6px}
+.sub{color:var(--mute);margin:0 0 36px}
+.events{display:grid;gap:18px}
+.ev{display:grid;grid-template-columns:96px 1fr;gap:22px;background:var(--card);border:1px solid var(--line);padding:22px;align-items:center}
+.date{text-align:center;border-right:1px solid var(--line);padding-right:18px}
+.date b{display:block;font-size:38px;font-weight:400;color:var(--gold);line-height:1}
+.date span{font:11px system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.ev h3{margin:0 0 4px;font-weight:400;font-size:22px}
+.meta{font:14px system-ui,sans-serif;color:var(--mute)}
+.ev p{margin:8px 0 0;font-size:15px;color:var(--mute)}
+.ev a.more{font:12px system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);text-decoration:none}
+.gallery{columns:3 240px;column-gap:14px}
+.gallery figure{margin:0 0 14px;break-inside:avoid;position:relative;overflow:hidden}
+.gallery img{width:100%;display:block;filter:saturate(.9);transition:transform .6s}
+.gallery figure:hover img{transform:scale(1.04)}
+.gallery figcaption{position:absolute;inset:auto 0 0;padding:26px 14px 10px;font:12px system-ui,sans-serif;letter-spacing:.15em;text-transform:uppercase;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.sign{text-align:center}
+.sign code{display:inline-block;margin-top:6px;color:var(--gold);font-size:18px}
+footer{padding:36px 0;text-align:center;color:var(--mute);font:13px system-ui,sans-serif;border-top:1px solid var(--line)}
+.empty{color:var(--mute);font-style:italic}
+@media(max-width:560px){.ev{grid-template-columns:1fr}.date{border:0;text-align:left;padding:0;display:flex;gap:10px;align-items:baseline}}
+</style>
+</head>
+<body>
+<div class="wrap"><nav><span class="brand">PURDUE TANGO</span><div><a href="#events">Events</a><a href="#gallery">Gallery</a><a href="#join">Join</a></div></nav></div>
+<header class="hero"><div class="wrap">
+<h1><em>La Milonguera</em><br>Argentine Tango Club</h1>
+<a class="btn" href="#events">Upcoming events</a>
+</div></header>
+
+<section id="events"><div class="wrap">
+<h2>Upcoming events</h2><p class="sub">&nbsp;</p>
+<div class="events" id="events-list"><p class="empty">Loading events…</p></div>
+</div></section>
+
+<section id="gallery"><div class="wrap">
+<h2>Photos</h2><p class="sub">&nbsp;</p>
+<div class="gallery" id="gallery-grid"></div>
+</div></section>
+
+<section id="join" class="sign"><div class="wrap">
+<h2>Email list</h2>
+<p class="sub">Subscribe to our email list:</p>
+<a class="btn" href="https://tinyurl.com/ptangoemail">tinyurl.com/ptangoemail</a>
+</div></section>
+<footer>© <span id="yr"></span> Purdue Tango Club · Not an official Purdue University page</footer>
+
+<script src="data/events.js"></script>
+<script src="data/photos.js"></script>
+<script>
+document.getElementById('yr').textContent=new Date().getFullYear();
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const safeUrl=u=>/^https?:\/\//.test(u||'')?u:'#';
+(function(list){
+  const now=new Date();
+  const up=list.filter(e=>new Date(e.end||e.start)>=now).sort((a,b)=>a.start.localeCompare(b.start));
+  const box=document.getElementById('events-list');
+  if(!up.length){box.innerHTML='<p class="empty">No upcoming events right now. Check back soon.</p>';return;}
+  box.innerHTML=up.map(e=>{
+    const d=new Date(e.start);
+    const t=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    return `<article class="ev"><div class="date"><b>${d.getDate()}</b><span>${d.toLocaleString('en-US',{month:'short'})}</span></div>
+    <div><h3>${esc(e.title)}</h3><div class="meta">${d.toLocaleDateString('en-US',{weekday:'long'})} · ${t} · ${esc(e.location)}</div>
+    <p>${esc(e.description)}</p><p><a class="more" href="${esc(safeUrl(e.url))}">Details &amp; RSVP →</a></p></div></article>`}).join('');
+})(window.EVENTS||[]);
+(function(p){
+  document.getElementById('gallery-grid').innerHTML=p.map(x=>`<figure><img loading="lazy" src="${esc(x.src)}" alt="${esc(x.alt)}"><figcaption>${esc(x.caption)}</figcaption></figure>`).join('');
+})(window.PHOTOS||[]);
+</script>
+</body>
+</html>
