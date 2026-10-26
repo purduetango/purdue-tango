@@ -1,6 +1,10 @@
 {
   "greeting": "Hello Tangueros & Tangueras,",
-  "signature": ["Regards,", "Berk Aydogmus", "Purdue La Milonguera Tango Club"],
+  "signature": [
+    "Regards,",
+    "Berk Aydogmus",
+    "Purdue La Milonguera Tango Club"
+  ],
   "classes": [
     {
       "match": "intermediate",
@@ -14,20 +18,19 @@
       "match": "beginner",
       "subject": "Beginner lesson today",
       "paragraphs": [
-        "We have our beginner lesson today from {time} in {location}. Our precious instructor Barron will be there to teach today. Thank you for your interest, see you tonight."
+        "We have our beginner lesson today from {time} in {location}. Our precious instructor Barron will be there to teach today. Thank you for your interest, see you tonight.",
+        "https://docs.google.com/spreadsheets/d/1KK1lxgO_ODwmemYA4Xa6WDYY2HMTI9QN4Wrcr5VU0p4/edit?usp=sharing This is the link to our skill development classes that are available for our members by our precious instructor Jeff. Please consider signing up."
       ]
     },
     {
       "match": "skill development",
-      "subject": "Skill development class today",
-      "paragraphs": [
-        "We have our skill development class today from {time} in {location}. Our precious instructor Jeff will be there to teach today.",
-        "https://docs.google.com/spreadsheets/d/1KK1lxgO_ODwmemYA4Xa6WDYY2HMTI9QN4Wrcr5VU0p4/edit?usp=sharing This is the link to our skill development classes that are available for our members. Please consider signing up."
-      ]
+      "skip": true
     }
   ],
   "fallback": {
     "subject": "{title} today",
-    "paragraphs": ["We have {title} today from {time} in {location}. {description}"]
+    "paragraphs": [
+      "We have {title} today from {time} in {location}. {description}"
+    ]
   }
 }

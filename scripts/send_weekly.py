@@ -36,7 +36,8 @@ def load():
     ev = json.loads(raw[raw.rindex("window.EVENTS =") + 15:].rsplit(";", 1)[0])
     last = TODAY + timedelta(days=DAYS - 1 if MODE == "digest" else 0)
     keep = [e for e in ev if TODAY <= datetime.fromisoformat(e["start"]).date() <= last
-            and (not e.get("sample") or os.environ.get("ALLOW_SAMPLE") == "1")]
+            and (not e.get("sample") or os.environ.get("ALLOW_SAMPLE") == "1")
+            and not (MODE != "digest" and template(e).get("skip"))]
     return sorted(keep, key=lambda e: e["start"])
 
 def span(e):
