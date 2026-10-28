@@ -1,16 +1,6 @@
 // Edit this list. Keep the window.EVENTS = [...] wrapper.
 window.EVENTS = [
   {
-    "id": "12663392",
-    "title": "Tango Fall Beginner Classes",
-    "start": "2026-10-27T19:30",
-    "end": "2026-10-27T21:00",
-    "location": "BHEE 236",
-    "description": "This is the weekly Tango dance class where students will have the opportunity to learn the art of Tango. Our dedicated instructors will guide and assist students in mastering the Tango dance, helping them practice and enhance their skills at each session. Whether you are a complete beginner or an experienced dancer, no partner or prior experience is required to join and enjoy the class. Come and embrace the world of Tango with us! This is a Tango class for all interested people during the Fall of 2026.",
-    "url": "https://boilerlink.purdue.edu/event/12663392",
-    "image": "https://se-images.campuslabs.com/clink/images/cd47c946-e91f-4996-b44e-d9ebc21ad4ef1ba53992-8d43-42a3-8e40-4bd52a160d2c.png?preset=med-w"
-  },
-  {
     "id": "12851824",
     "title": "Tango Fall Skill Development",
     "start": "2026-11-01T17:00",
