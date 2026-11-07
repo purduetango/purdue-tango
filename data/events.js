@@ -111,6 +111,16 @@ window.EVENTS = [
     "image": "https://se-images.campuslabs.com/clink/images/cd47c946-e91f-4996-b44e-d9ebc21ad4ef1ba53992-8d43-42a3-8e40-4bd52a160d2c.png?preset=med-w"
   },
   {
+    "id": "12851819",
+    "title": "Tango Fall Skill Development",
+    "start": "2026-12-06T17:00",
+    "end": "2026-12-06T18:00",
+    "location": "BRNG 1254",
+    "description": "Skill Development Classes for people that want to make their dance feel smoother and nicer. There will be an instructor for people to learn from.",
+    "url": "https://boilerlink.purdue.edu/event/12851819",
+    "image": "https://se-images.campuslabs.com/clink/images/8a84cd1d-30cb-4364-9a41-da580a0e2e1304e84b50-258c-444d-8e42-dbab24137176.png?preset=med-w"
+  },
+  {
     "id": "12663473-20261207",
     "title": "Tango Fall Intermediate Classes",
     "start": "2026-12-07T19:00",
