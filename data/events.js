@@ -121,14 +121,13 @@ window.EVENTS = [
     "image": "https://se-images.campuslabs.com/clink/images/8a84cd1d-30cb-4364-9a41-da580a0e2e1304e84b50-258c-444d-8e42-dbab24137176.png?preset=med-w"
   },
   {
-    "id": "12663473-20261207",
+    "id": "12663472",
     "title": "Tango Fall Intermediate Classes",
     "start": "2026-12-07T19:00",
     "end": "2026-12-07T20:30",
-    "location": "BHEE 236",
+    "location": "PMU South Tower 320",
     "description": "This is the weekly Tango dance class where students will have the opportunity to learn the art of Tango. Our dedicated instructors will guide and assist students in mastering the Tango dance, helping them practice and enhance their skills at each session. Whether you are a complete beginner or an experienced dancer, no partner or prior experience is required to join and enjoy the class. Come and embrace the world of Tango with us! This is a Tango class for all interested people during the Fall of 2026.",
-    "url": "https://boilerlink.purdue.edu/event/12663473",
-    "image": "https://se-images.campuslabs.com/clink/images/4de330c2-2979-4680-aa41-7d6e4c3322c32b797b5c-9151-44d2-96d5-a0219273f31b.png?preset=med-w",
-    "series": "12663473"
+    "url": "https://boilerlink.purdue.edu/event/12663472",
+    "image": "https://se-images.campuslabs.com/clink/images/4de330c2-2979-4680-aa41-7d6e4c3322c32b797b5c-9151-44d2-96d5-a0219273f31b.png?preset=med-w"
   }
 ];
