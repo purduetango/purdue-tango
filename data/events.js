@@ -1,16 +1,6 @@
 // Edit this list. Keep the window.EVENTS = [...] wrapper.
 window.EVENTS = [
   {
-    "id": "12851827",
-    "title": "Tango Fall Skill Development",
-    "start": "2026-11-22T17:00",
-    "end": "2026-11-22T18:00",
-    "location": "BRNG 1254",
-    "description": "Skill Development Classes for people that want to make their dance feel smoother and nicer. There will be an instructor for people to learn from.",
-    "url": "https://boilerlink.purdue.edu/event/12851827",
-    "image": "https://se-images.campuslabs.com/clink/images/8a84cd1d-30cb-4364-9a41-da580a0e2e1304e84b50-258c-444d-8e42-dbab24137176.png?preset=med-w"
-  },
-  {
     "id": "12663470",
     "title": "Tango Fall Intermediate Classes",
     "start": "2026-11-23T19:00",
